@@ -38,8 +38,7 @@ __global__ void gru_cuda_forward_kernel(
       const int c = blockIdx.x * blockDim.x + threadIdx.x;
 
       if (c < gate_x.size(2) && c < gate_h.size(2)) {
-        // resetgate[n][c] = sigmoid(gate_x[n][0][c] + gate_h[n][0][c]);
-        resetgate[n][c] = sigmoid(gate_x[n][0][c] + gate_x[n][0][c]);
+        resetgate[n][c] = sigmoid(gate_x[n][0][c] + gate_h[n][0][c]);
         inputgate[n][c] = sigmoid(gate_x[n][1][c] + gate_h[n][1][c]);
         newgate[n][c] = tanh(gate_x[n][2][c] + resetgate[n][c] * gate_h[n][2][c]);
         new_h[n][c] = newgate[n][c] + inputgate[n][c] * (old_h[n][c] - newgate[n][c]);
