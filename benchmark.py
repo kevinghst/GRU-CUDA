@@ -22,8 +22,8 @@ options = parser.parse_args()
 
 if options.example == 'py':
     from python.gru import GRUCell
-elif options.example == 'py_new':
-    from python.gru_new import GRUCell
+elif options.example == 'py_baseline':
+    from python.gru_baseline import GRUCell
 elif options.example == 'cpp':
     from cpp.gru import GRUCell
 else:

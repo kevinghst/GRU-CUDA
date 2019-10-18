@@ -12,7 +12,7 @@ import torch
 TIME_SCALES = {'s': 1, 'ms': 1000, 'us': 1000000}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'py_new'])
+parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'py_baseline'])
 parser.add_argument('-b', '--batch-size', type=int, default=16)
 parser.add_argument('-f', '--features', type=int, default=32)
 parser.add_argument('-s', '--state-size', type=int, default=128)
@@ -24,8 +24,8 @@ options = parser.parse_args()
 
 if options.example == 'py':
     from python.gru import GRUCell
-elif options.example == 'py_new':
-    from python.gru_new import GRUCell
+elif options.example == 'py_baseline':
+    from python.gru_baseline import GRUCell
 elif options.example == 'cpp':
     from cpp.gru import GRUCell
 else:

@@ -1,6 +1,9 @@
+import pdb
+
 import math
 import torch
 import torch.nn.functional as F 
+from torch import nn
 
 torch.manual_seed(42)
 
@@ -11,16 +14,15 @@ class GRUCell(torch.nn.Module):
 
     """
 
-    def __init__(self, input_features, state_size, bias=True):
+    def __init__(self, input_features, state_size):
         super(GRUCell, self).__init__()
         self.input_features = input_features
         self.state_size = state_size
-        self.bias = bias
-        self.x2h = torch.nn.Linear(input_features, 3 * state_size, bias=bias)
-        self.h2h = torch.nn.Linear(state_size, 3 * state_size, bias=bias)
+        self.x2h_weights = nn.Parameter(torch.Tensor(3 * state_size, input_features))
+        self.h2h_weights = nn.Parameter(torch.Tensor(3 * state_size, state_size))
+        self.x2h_bias = nn.Parameter(torch.Tensor(1, 3 * state_size))
+        self.h2h_bias = nn.Parameter(torch.Tensor(1, 3 * state_size))
         self.reset_parameters()
-
-
 
     def reset_parameters(self):
         std = 1.0 / math.sqrt(self.state_size)
@@ -28,11 +30,10 @@ class GRUCell(torch.nn.Module):
             w.data.uniform_(-std, std)
     
     def forward(self, x, state):
-        
         x = x.view(-1, x.size(1))
         
-        gate_x = self.x2h(x) 
-        gate_h = self.h2h(state)
+        gate_x = F.linear(x, self.x2h_weights, self.x2h_bias)
+        gate_h = F.linear(state, self.h2h_weights, self.h2h_bias)
         
         gate_x = gate_x.squeeze()
         gate_h = gate_h.squeeze()
