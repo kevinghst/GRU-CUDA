@@ -64,8 +64,6 @@ std::vector<torch::Tensor> gru_cuda_forward(
         auto gate_x = gate_x_weights.reshape({batch_size, 3, state_size});
         auto gate_h = gate_h_weights.reshape({batch_size, 3, state_size});
 
-        cout << "hello" << endl;
-
         auto resetgate = torch::zeros_like(old_h);
         auto inputgate = torch::zeros_like(old_h);
         auto newgate = torch::zeros_like(old_h);
