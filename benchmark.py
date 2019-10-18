@@ -6,12 +6,13 @@ import math
 import time
 
 import torch
+from torch import nn
 
 TIME_SCALES = {'s': 1, 'ms': 1000, 'us': 1000000}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'py_new'])
-parser.add_argument('-b', '--batch-size', type=int, default=16)
+parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'py_baseline', 'py_torch'])
+parser.add_argument('-b', '--batch-size', type=int, default=128)
 parser.add_argument('-f', '--features', type=int, default=32)
 parser.add_argument('-s', '--state-size', type=int, default=128)
 parser.add_argument('-r', '--runs', type=int, default=100)
@@ -24,6 +25,8 @@ if options.example == 'py':
     from python.gru import GRUCell
 elif options.example == 'py_baseline':
     from python.gru_baseline import GRUCell
+elif options.example == 'py_torch':
+    i = "do nothing"
 elif options.example == 'cpp':
     from cpp.gru import GRUCell
 else:
@@ -39,7 +42,10 @@ kwargs = {'dtype': dtype,
 X = torch.randn(options.batch_size, options.features, **kwargs)
 h = torch.randn(options.batch_size, options.state_size, **kwargs)
 
-rnn = GRUCell(options.features, options.state_size).to(device, dtype)
+if options.example == 'py_torch':
+    rnn = nn.GRUCell(options.features, options.state_size).to(device, dtype)
+else:
+    rnn = GRUCell(options.features, options.state_size).to(device, dtype)
 
 # Force CUDA initialization
 new_h = rnn(X, h)
