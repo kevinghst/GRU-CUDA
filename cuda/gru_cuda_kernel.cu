@@ -21,6 +21,7 @@ template <typename scalar_t>
 __device__ __forceinline__ scalar_t d_tanh(scalar_t z) {
   const auto t = tanh(z);
   return 1 - (t * t);
+}
   
 template <typename scalar_t>
 __global__ void gru_cuda_forward_kernel(
