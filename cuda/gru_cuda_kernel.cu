@@ -13,14 +13,12 @@ __device__ __forceinline__ scalar_t sigmoid(scalar_t z) {
 
 template <typename scalar_t>
 __device__ __forceinline__ scalar_t d_sigmoid(scalar_t z) {
-  const auto s = sigmoid(z);
-  return (1.0 - s) * s;
+  return (1.0 - z) * z;
 }
 
 template <typename scalar_t>
 __device__ __forceinline__ scalar_t d_tanh(scalar_t z) {
-  const auto t = tanh(z);
-  return 1 - (t * t);
+  return 1 - (z * z);
 }
   
 template <typename scalar_t>
@@ -157,6 +155,8 @@ std::vector<torch::Tensor> gru_cuda_backward(
 
     auto d_hidden_gates_weights = d_hidden_gates.flatten(1,2);
     auto d_input_gates_weights = d_input_gates.flatten(1,2);
+
+    // error up
 
     auto d_hidden_weights = d_hidden_gates_weights.t().mm(hx);
     auto d_input_weights = d_input_gates_weights.t().mm(x);
