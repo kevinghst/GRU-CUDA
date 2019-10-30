@@ -142,7 +142,7 @@ std::vector<torch::Tensor> gru_cuda_backward(
     const int threads = 1024;
     const dim3 blocks((state_size + threads - 1) / threads, batch_size);
 
-    AT_DISPATCH_FLOATING_TYPES(X.type(), "gru_forward_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(x.type(), "gru_forward_cuda", ([&] {
       gru_cuda_backward_kernel<scalar_t><<<blocks, threads>>>(
           d_hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
           d_hidden_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
