@@ -44,7 +44,7 @@ __global__ void gru_cuda_forward_kernel(
 }
 
 template <typename scalar_t>
-__global__ void gru_cuda_backward_kernel(
+__global__ void gru_cuda_backward_kernel_one(
     torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_hx,
     torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> d_hidden_gates,
     torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> d_input_gates,
@@ -72,6 +72,22 @@ __global__ void gru_cuda_backward_kernel(
         d_input_gates[n][0][c] = grg;
         d_input_gates[n][1][c] = gig;
         d_input_gates[n][2][c] = gin;
+      }
+}
+
+template <typename scalar_t>
+__global__ void gru_cuda_backward_kernel_two(
+    torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_hx,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> grad_hy,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> ig,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> temp) {
+      //batch index
+      const int n = blockIdx.y;
+      //column index
+      const int c = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if (c < d_hx.size(1)) {
+        d_hx[n][c] = grad_hy[n][c] * ig[n][c] + temp[n][c];
       }
 }
 
@@ -141,7 +157,7 @@ std::vector<torch::Tensor> gru_cuda_backward(
     const dim3 blocks((state_size + threads - 1) / threads, batch_size);
 
     AT_DISPATCH_FLOATING_TYPES(x.type(), "gru_forward_cuda", ([&] {
-      gru_cuda_backward_kernel<scalar_t><<<blocks, threads>>>(
+      gru_cuda_backward_kernel_one<scalar_t><<<blocks, threads>>>(
           d_hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
           d_hidden_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
           d_input_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
@@ -156,16 +172,22 @@ std::vector<torch::Tensor> gru_cuda_backward(
     auto d_hidden_gates_weights = d_hidden_gates.flatten(1,2);
     auto d_input_gates_weights = d_input_gates.flatten(1,2);
 
-    // error up
-
     auto d_hidden_weights = d_hidden_gates_weights.t().mm(hx);
     auto d_input_weights = d_input_gates_weights.t().mm(x);
 
     auto d_hidden_bias = d_hidden_gates_weights.sum(0, true);
     auto d_input_bias = d_input_gates_weights.sum(0, true);
 
-    auto grad_hx =  grad_hy * ig + d_hidden_gates_weights.mm(h2h_w);
+    auto temp = d_hidden_gates_weights.mm(h2h_w);
 
-    return {d_input_weights, d_hidden_weights, d_input_bias, d_hidden_bias, grad_hx};
+    AT_DISPATCH_FLOATING_TYPES(x.type(), "gru_forward_cuda", ([&] {
+      gru_cuda_backward_kernel_two<scalar_t><<<blocks, threads>>>(
+        d_hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+        grad_hy.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+        ig.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+        temp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+    }));
+
+    return {d_input_weights, d_hidden_weights, d_input_bias, d_hidden_bias, d_hx};
 }
 
