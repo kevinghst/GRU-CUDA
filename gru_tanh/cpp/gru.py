@@ -3,7 +3,7 @@ from torch import nn
 from torch.autograd import Function
 import torch
 
-import gru_cpp
+import gru_tanh_cpp
 import pdb
 
 torch.manual_seed(42)
@@ -12,7 +12,7 @@ class GRUFunction(Function):
     @staticmethod
     def forward(ctx, input, x2h_w, h2h_w, x2h_b, h2h_b, old_h):
         x = input.view(-1, input.size(1))
-        outputs = gru_cpp.forward(x, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
+        outputs = gru_tanh_cpp.forward(x, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
         new_h = outputs[0]
         variables = outputs[1:] + [old_h, x, x2h_w, h2h_w]
         ctx.save_for_backward(*variables)
@@ -21,7 +21,7 @@ class GRUFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_hy):
-        grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx = gru_cpp.backward(
+        grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx = gru_tanh_cpp.backward(
             grad_hy, *ctx.saved_variables
         )
         return None, grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx
