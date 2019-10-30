@@ -185,7 +185,7 @@ std::vector<torch::Tensor> gru_cuda_backward(
         d_hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
         grad_hy.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
         ig.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-        temp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>();
+        temp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
     }));
 
     return {d_input_weights, d_hidden_weights, d_input_bias, d_hidden_bias, d_hx};
