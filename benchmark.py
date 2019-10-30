@@ -84,5 +84,5 @@ forward_average = forward_time / options.runs * scale
 backward_average = backward_time / options.runs * scale
 
 print('Forward: {0:.3f}/{1:.3f} {4} | Backward {2:.3f}/{3:.3f} {4}'.format(
-    forward_average, backward_average,
+    0, forward_average, 0, backward_average,
     options.scale))
