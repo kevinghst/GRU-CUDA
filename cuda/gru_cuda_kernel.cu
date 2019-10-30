@@ -45,6 +45,37 @@ __global__ void gru_cuda_forward_kernel(
       }
 }
 
+template <typename scalar_t>
+__global__ void gru_cuda_backward_kernel(
+    torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_hx,
+    torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> d_hidden_gates,
+    torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> d_input_gates,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> grad_hy,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> ig,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> hx,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> ng,
+    const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> rg,
+    const torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> gate_h) {
+      //batch index
+      const int n = blockIdx.y;
+      //column index
+      const int c = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if (c < d_hidden_gates.size(2)) {
+        const auto gig = d_sigmoid(ig[n][c]) * grad_hy[n][c] * (hx[n][c] - ng[n][c]);
+        const auto gin = d_tanh(ng[n][c]) * grad_hy[n][c] * (1 - ig[n][c]);
+        const auto ghn = gin * rg[n][c];
+        const auto grg = d_sigmoid(rg[n][c]) * gin * gate_h[n][2][c];
+
+        d_hidden_gates[n][0][c] = grg;
+        d_hidden_gates[n][1][c] = gig;
+        d_hidden_gates[n][2][c] = ghn;
+
+        d_input_gates[n][0][c] = grg;
+        d_input_gates[n][1][c] = gig;
+        d_input_gates[n][2][c] = gin;
+      }
+}
 
 } // namespace
 
@@ -84,6 +115,57 @@ std::vector<torch::Tensor> gru_cuda_forward(
           }));
         
 
-        return {new_h};
+        return {
+          new_h, resetgate, inputgate, newgate, gate_h
+        };
+}
+
+std::vector<torch::Tensor> gru_cuda_backward(
+  torch::Tensor grad_hy,
+  torch::Tensor rg,
+  torch::Tensor ig,
+  torch::Tensor ng,
+  torch::Tensor gate_h,
+  torch::Tensor hx,
+  torch::Tensor x,
+  torch::Tensor x2h_w,
+  torch::Tensor h2h_w) {
+
+    // gates.shape = {batch_size, 3, state_size}
+    auto d_hidden_gates = torch::zeros_like(gate_h);
+    auto d_input_gates = torch::zeros_like(gate_h);
+    auto d_hx = torch::zeros_like(grad_hy);
+
+    const auto batch_size = grad_hy.size(0);
+    const auto state_size = grad_hy.size(1);
+
+    const int threads = 1024;
+    const dim3 blocks((state_size + threads - 1) / threads, batch_size);
+
+    AT_DISPATCH_FLOATING_TYPES(X.type(), "gru_forward_cuda", ([&] {
+      gru_cuda_backward_kernel<scalar_t><<<blocks, threads>>>(
+          d_hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+          d_hidden_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
+          d_input_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
+          grad_hy.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+          ig.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+          hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+          ng.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+          rg.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
+          gate_h.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>());
+    }));
+
+    auto d_hidden_gates_weights = d_hidden_gates.flatten(1,2);
+    auto d_input_gates_weights = d_input_gates.flatten(1,2);
+
+    auto d_hidden_weights = d_hidden_gates_weights.t().mm(hx);
+    auto d_input_weights = d_input_gates_weights.t().mm(x);
+
+    auto d_hidden_bias = d_hidden_gates_weights.sum(0, true);
+    auto d_input_bias = d_input_gates_weights.sum(0, true);
+
+    auto grad_hx =  grad_hy * ig + d_hidden_gates_weights.mm(h2h_w);
+
+    return {d_input_weights, d_hidden_weights, d_input_bias, d_hidden_bias, grad_hx};
 }
 

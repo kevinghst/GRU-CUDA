@@ -8,6 +8,7 @@ import torch
 import python.gru_baseline
 import cpp.gru
 
+import pdb
 
 def check_equal(first, second, verbose):
     if verbose:
@@ -23,12 +24,12 @@ def check_equal(first, second, verbose):
 
 
 def zero_grad(variables):
-    for variable in variables:
+    for variable in variables[1:]:
         variable.grad.zero_()
 
 
 def get_grads(variables):
-    return [var.grad.clone() for var in variables]
+    return [var.grad.clone() for var in variables[1:]]
 
 
 def check_forward(variables, with_cuda, verbose):
@@ -48,14 +49,19 @@ def check_forward(variables, with_cuda, verbose):
 
 def check_backward(variables, with_cuda, verbose):
     baseline_values = python.gru_baseline.GRUFunction.apply(*variables)
-    (baseline_values[0] + baseline_values[1]).sum().backward()
+    baseline_values[0].sum().backward()
     grad_baseline = get_grads(variables)
 
     zero_grad(variables)
 
+    # two_baseline_values = python.gru_baseline.GRUFunction.apply(*variables)
+    # two_baseline_values[0].sum().backward()
+    # two_grad_baseline = get_grads(variables)
+
     cpp_values = cpp.gru.GRUFunction.apply(*variables)
-    (cpp_values[0] + cpp_values[1]).sum().backward()
+    cpp_values[0].sum().backward()
     grad_cpp = get_grads(variables)
+
 
     print('Backward: Baseline (Python) vs. C++ ... ', end='')
     check_equal(grad_baseline, grad_cpp, verbose)
@@ -64,7 +70,7 @@ def check_backward(variables, with_cuda, verbose):
     if with_cuda:
         zero_grad(variables)
         cuda_values = cuda.gru.GRUFunction.apply(*variables)
-        (cuda_values[0] + cuda_values[1]).sum().backward()
+        cuda_values[0].sum().backward()
         grad_cuda = get_grads(variables)
 
         print('Backward: Baseline (Python) vs. CUDA ... ', end='')
@@ -87,17 +93,21 @@ if options.cuda:
 else:
     device = torch.device("cpu")
 
-kwargs = {'dtype': torch.float64,
+kwargs_hidden = {'dtype': torch.float64,
           'device': device,
           'requires_grad': True}
-X = torch.randn(options.batch_size,
-                options.features,
-                **kwargs)
-h = torch.randn(options.batch_size, options.state_size, **kwargs)
-Wx = torch.randn(3 * options.state_size, options.features, **kwargs)
-Wh = torch.randn(3 * options.state_size, options.state_size, **kwargs)
-bx = torch.randn(1, 3 * options.state_size, **kwargs)
-bh = torch.randn(1, 3 * options.state_size, **kwargs)
+
+kwargs_input = {'dtype': torch.float64,
+          'device': device,
+          'requires_grad': False}
+
+X = torch.randn(options.batch_size, options.features, **kwargs_input)
+h = torch.randn(options.batch_size, options.state_size, **kwargs_hidden)
+
+Wx = torch.randn(3 * options.state_size, options.features, **kwargs_hidden)
+Wh = torch.randn(3 * options.state_size, options.state_size, **kwargs_hidden)
+bx = torch.randn(1, 3 * options.state_size, **kwargs_hidden)
+bh = torch.randn(1, 3 * options.state_size, **kwargs_hidden)
 
 variables = [X, Wx, Wh, bx, bh, h]
 

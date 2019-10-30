@@ -10,10 +10,22 @@ torch.manual_seed(42)
 class GRUFunction(Function):
     @staticmethod
     def forward(ctx, input, x2h_w, h2h_w, x2h_b, h2h_b, old_h):
-        outputs = gru_cuda.forward(input, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
+        x = input.view(-1, input.size(1))
+        outputs = gru_cpp.forward(x, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
         new_h = outputs[0]
-        # Backward stuff
+        variables = outputs[1:] + [old_h, x, x2h_w, h2h_w]
+        ctx.save_for_backward(*variables)
+
         return new_h
+
+    @staticmethod
+    def backward(ctx, grad_hy):
+        grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx = gru_cuda.backward(
+            grad_hy.contiguous(), *ctx.saved_variables
+        )
+
+        return None, grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx
+
 
 class GRUCell(nn.Module):
     def __init__(self, input_features, state_size):

@@ -5,7 +5,16 @@ from torch.autograd import Function
 import torch
 import torch.nn.functional as F
 
+import pdb
+
 torch.manual_seed(42)
+
+def d_sigmoid(s):
+    return (1 - s) * s
+
+
+def d_tanh(t):
+    return 1 - (t * t)
 
 class GRUFunction(Function):
     @staticmethod
@@ -28,11 +37,43 @@ class GRUFunction(Function):
         newgate = F.tanh(i_n + (resetgate * h_n))
         
         hy = newgate + inputgate * (old_h - newgate)
-        
-        # add backward stuff
+
+        ctx.save_for_backward(resetgate, inputgate, newgate, h_n, old_h, x, x2h_w, h2h_w)
         
         return hy
+    
+    @staticmethod
+    def backward(ctx, grad_hy):
+        rg, ig, ng, hn, hx, x, x2h_w, h2h_w = ctx.saved_variables[:8]
+        
 
+        grad_x = grad_input_gates = grad_hidden_gates = grad_input_bias = grad_hidden_bias = grad_hx = None
+
+        grad_hx = grad_hy * ig
+
+        gig = d_sigmoid(ig) * grad_hy * (hx - ng)
+        gin = d_tanh(ng) * grad_hy * (1 - ig)
+        ghn = gin * rg
+        grg = d_sigmoid(rg) * gin * hn 
+
+        grad_input_gates = torch.cat(
+            [grg, gig, gin], dim=1
+        )
+        grad_hidden_gates = torch.cat(
+            [grg, gig, ghn], dim=1
+        )
+
+        grad_input_weights = grad_input_gates.t().mm(x)
+        grad_hidden_weights = grad_hidden_gates.t().mm(hx)
+
+
+        grad_input_bias = grad_input_gates.sum(dim=0, keepdim=True)
+        grad_hidden_bias = grad_hidden_gates.sum(dim=0, keepdim=True)
+
+        # grad_x = grad_input_gates.mm(x2h_w)
+        grad_hx += grad_hidden_gates.mm(h2h_w)
+
+        return grad_x, grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx
 
 
 class GRUCell(torch.nn.Module):
@@ -42,7 +83,7 @@ class GRUCell(torch.nn.Module):
 
     """
 
-    def __init__(self, input_features, state_size):
+    def __init__(self, input_features, state_size, bias=True):
         super(GRUCell, self).__init__()
         self.input_features = input_features
         self.state_size = state_size

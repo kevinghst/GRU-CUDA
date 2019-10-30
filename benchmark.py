@@ -5,6 +5,7 @@ import argparse
 import math
 import time
 
+import pdb
 import torch
 from torch import nn
 
@@ -36,11 +37,16 @@ else:
 device = torch.device("cuda") if options.cuda else torch.device("cpu")
 dtype = torch.float64 if options.double else torch.float32
 
-kwargs = {'dtype': dtype,
+kwargs_hidden = {'dtype': dtype,
           'device': device,
           'requires_grad': True}
-X = torch.randn(options.batch_size, options.features, **kwargs)
-h = torch.randn(options.batch_size, options.state_size, **kwargs)
+
+kwargs_input = {'dtype': dtype,
+          'device': device,
+          'requires_grad': False}
+
+X = torch.randn(options.batch_size, options.features, **kwargs_input)
+h = torch.randn(options.batch_size, options.state_size, **kwargs_hidden)
 
 if options.example == 'py_torch':
     rnn = nn.GRUCell(options.features, options.state_size).to(device, dtype)
@@ -49,7 +55,7 @@ else:
 
 # Force CUDA initialization
 new_h = rnn(X, h)
-# (new_h.sum() + new_C.sum()).backward()
+new_h.sum().backward()
 
 forward_min = math.inf
 forward_time = 0
@@ -65,11 +71,11 @@ for _ in range(options.runs):
     forward_min = min(forward_min, elapsed)
     forward_time += elapsed
 
-    # start = time.time()
-    # (new_h.sum() + new_C.sum()).backward()
-    # elapsed = time.time() - start
-    # backward_min = min(backward_min, elapsed)
-    # backward_time += elapsed
+    start = time.time()
+    new_h.sum().backward()
+    elapsed = time.time() - start
+    backward_min = min(backward_min, elapsed)
+    backward_time += elapsed
 
 scale = TIME_SCALES[options.scale]
 forward_min *= scale
