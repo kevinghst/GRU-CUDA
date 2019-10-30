@@ -11,7 +11,7 @@ class GRUFunction(Function):
     @staticmethod
     def forward(ctx, input, x2h_w, h2h_w, x2h_b, h2h_b, old_h):
         x = input.view(-1, input.size(1))
-        outputs = gru_cpp.forward(x, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
+        outputs = gru_cuda.forward(x, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
         new_h = outputs[0]
         variables = outputs[1:] + [old_h, x, x2h_w, h2h_w]
         ctx.save_for_backward(*variables)
