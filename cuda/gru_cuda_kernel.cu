@@ -45,7 +45,6 @@ __global__ void gru_cuda_forward_kernel(
 
 template <typename scalar_t>
 __global__ void gru_cuda_backward_kernel_one(
-    torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_hx,
     torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> d_hidden_gates,
     torch::PackedTensorAccessor<scalar_t,3,torch::RestrictPtrTraits,size_t> d_input_gates,
     const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> grad_hy,
@@ -158,7 +157,6 @@ std::vector<torch::Tensor> gru_cuda_backward(
 
     AT_DISPATCH_FLOATING_TYPES(x.type(), "gru_forward_cuda", ([&] {
       gru_cuda_backward_kernel_one<scalar_t><<<blocks, threads>>>(
-          d_hx.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
           d_hidden_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
           d_input_gates.packed_accessor<scalar_t,3,torch::RestrictPtrTraits,size_t>(),
           grad_hy.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
