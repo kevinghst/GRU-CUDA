@@ -4,6 +4,7 @@ from __future__ import print_function
 import argparse
 import math
 import time
+import importlib
 
 import pdb
 import torch
@@ -23,7 +24,7 @@ parser.add_argument('-d', '--double', action='store_true')
 options = parser.parse_args()
 
 if options.example == 'py':
-    from python.gru import GRUCell
+    from python.gru import GRUCell    
 elif options.example == 'py_baseline':
     from python.gru_baseline import GRUCell
 elif options.example == 'py_torch':
