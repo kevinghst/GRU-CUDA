@@ -15,12 +15,12 @@ import argparse
 import pdb
 
 parser = argparse.ArgumentParser()
-parser.add_argument('example', choices=['cpp', 'cuda', 'py_baseline', 'py_torch'])
+parser.add_argument('example', choices=['cpp', 'cuda', 'py', 'torch_lib'])
 options = parser.parse_args()
 
-if options.example == 'py_baseline':
+if options.example == 'py':
     from python.gru_baseline import GRUCell  
-elif options.example == 'py_torch':
+elif options.example == 'torch_lib':
     GRUCell = nn.GRUCell
 elif options.example == 'cpp':
     from cpp.gru import GRUCell

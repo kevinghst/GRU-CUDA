@@ -13,7 +13,7 @@ from torch import nn
 TIME_SCALES = {'s': 1, 'ms': 1000, 'us': 1000000}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'py_baseline', 'py_torch'])
+parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'torch_lib'])
 parser.add_argument('-b', '--batch-size', type=int, default=128)
 parser.add_argument('-f', '--features', type=int, default=32)
 parser.add_argument('-s', '--state-size', type=int, default=128)
@@ -24,10 +24,8 @@ parser.add_argument('-d', '--double', action='store_true')
 options = parser.parse_args()
 
 if options.example == 'py':
-    from python.gru import GRUCell    
-elif options.example == 'py_baseline':
-    from python.gru_baseline import GRUCell
-elif options.example == 'py_torch':
+    from python.gru_baseline import GRUCell 
+elif options.example == 'torch_lib':
     i = "do nothing"
 elif options.example == 'cpp':
     from cpp.gru import GRUCell
@@ -49,7 +47,7 @@ kwargs_input = {'dtype': dtype,
 X = torch.randn(options.batch_size, options.features, **kwargs_input)
 h = torch.randn(options.batch_size, options.state_size, **kwargs_hidden)
 
-if options.example == 'py_torch':
+if options.example == 'torch_lib':
     rnn = nn.GRUCell(options.features, options.state_size).to(device, dtype)
 else:
     rnn = GRUCell(options.features, options.state_size).to(device, dtype)
