@@ -20,7 +20,7 @@ There are a few "sights" you can metaphorically visit in this repository:
 - Run sample training on MIMIC data and inspect training progression by running `python sample_train.py {torch_lib, py, cpp, cuda}`
 
 
-Compilation tips:
+## Compilation tips:
 - At NYU's Prince HPC cluster, load the approriate gcc and cuda versions by executing `module load gcc/6.3.0`, and `module load cuda/10.1.105`
 - Compile CUDA extension after sshing onto a GPU node. Re-compilation is neccessary whenever one ssh into a new GPU node.
 - Remove **build**, **dist**, ***.egg-info**, and execute `python setup.py clean` between re-compilations
