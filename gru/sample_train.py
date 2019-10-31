@@ -9,10 +9,21 @@ from torch.nn import Parameter
 from torch import Tensor
 import torch.nn.functional as F
 from torch.autograd import Function
-
-from python.gru_baseline import GRUCell
-
 import math
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('example', choices=['cpp', 'cuda', 'py_baseline', 'py_torch'])
+options = parser.parse_args()
+
+if options.example == 'py_baseline':
+    from python.gru_baseline import GRUCell  
+elif options.example == 'py_torch':
+    GRUCell = nn.GRUCell
+elif options.example == 'cpp':
+    from cpp.gru import GRUCell
+else:
+    from cuda.gru import GRUCell
 
 cuda = True if torch.cuda.is_available() else False
     

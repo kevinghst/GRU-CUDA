@@ -27,7 +27,7 @@ class GRUFunction(Function):
         return None, grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx
 
 class GRUCell(nn.Module):
-    def __init__(self, input_features, state_size):
+    def __init__(self, input_features, state_size, bias=True):
         super(GRUCell, self).__init__()
         self.input_features = input_features
         self.state_size = state_size

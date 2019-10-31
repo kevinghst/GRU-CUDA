@@ -28,7 +28,7 @@ class GRUFunction(Function):
 
 
 class GRUCell(nn.Module):
-    def __init__(self, input_features, state_size):
+    def __init__(self, input_features, state_size, bias=True):
         super(GRUCell, self).__init__()
         self.input_features = input_features
         self.state_size = state_size
