@@ -12,6 +12,8 @@ from torch.autograd import Function
 import math
 import argparse
 
+import pdb
+
 parser = argparse.ArgumentParser()
 parser.add_argument('example', choices=['cpp', 'cuda', 'py_baseline', 'py_torch'])
 options = parser.parse_args()
@@ -59,7 +61,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 
 class GRUModel(nn.Module):
-    def __init__(self, input_dim, hidden_dim, layer_dim, output_dim, bias=True):
+    def __init__(self, input_dim, hidden_dim, output_dim, layer_dim=1):
         super(GRUModel, self).__init__()
         # Hidden dimensions
         self.hidden_dim = hidden_dim
@@ -67,13 +69,10 @@ class GRUModel(nn.Module):
         # Number of hidden layers
         self.layer_dim = layer_dim
          
-       
-        self.gru_cell = GRUCell(input_dim, hidden_dim, layer_dim)
-        
+        self.gru_cell = GRUCell(input_dim, hidden_dim)
         
         self.fc = nn.Linear(hidden_dim, output_dim)
      
-    
     
     def forward(self, x):
         
@@ -87,7 +86,6 @@ class GRUModel(nn.Module):
         else:
             h0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim))
          
-       
         outs = []
         
         hn = h0[0,:,:]
@@ -107,11 +105,9 @@ class GRUModel(nn.Module):
 
 input_dim = 28
 hidden_dim = 128
-layer_dim = 1  # ONLY CHANGE IS HERE FROM ONE LAYER TO TWO LAYER
 output_dim = 10
  
-# model = LSTMModel(input_dim, hidden_dim, layer_dim, output_dim)
-model = GRUModel(input_dim, hidden_dim, layer_dim, output_dim)
+model = GRUModel(input_dim, hidden_dim, output_dim)
 
 #######################
 #  USE GPU FOR MODEL  #
