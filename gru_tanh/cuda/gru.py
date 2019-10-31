@@ -10,7 +10,7 @@ torch.manual_seed(42)
 class GRUFunction(Function):
     @staticmethod
     def forward(ctx, input, x2h_w, h2h_w, x2h_b, h2h_b, old_h):
-        x = input.view(-1, input.size(1))
+        x = input.view(-1, input.size(1)).contiguous()
         outputs = gru_tanh_cuda.forward(x, x2h_w, h2h_w, x2h_b, h2h_b, old_h)
         new_h = outputs[0]
         variables = outputs[1:] + [old_h, x, x2h_w, h2h_w]
