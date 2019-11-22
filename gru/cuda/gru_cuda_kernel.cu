@@ -35,7 +35,7 @@ __global__ void gru_cuda_forward_kernel(
       // column index
       const int c = blockIdx.x * blockDim.x + threadIdx.x;
 
-      if (c < gate_x.size(2) && c < gate_h.size(2)) {
+      if (c < gate_x.size(2)) {
         resetgate[n][c] = sigmoid(gate_x[n][0][c] + gate_h[n][0][c]);
         inputgate[n][c] = sigmoid(gate_x[n][1][c] + gate_h[n][1][c]);
         newgate[n][c] = tanh(gate_x[n][2][c] + resetgate[n][c] * gate_h[n][2][c]);
@@ -127,10 +127,7 @@ std::vector<torch::Tensor> gru_cuda_forward(
                 new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
           }));
         
-
-        return {
-          new_h, resetgate, inputgate, newgate, gate_h
-        };
+        return {new_h, resetgate, inputgate, newgate, gate_h};
 }
 
 std::vector<torch::Tensor> gru_cuda_backward(

@@ -54,6 +54,7 @@ else:
 
 # Force CUDA initialization
 new_h = rnn(X, h)
+pdb.set_trace()
 new_h.sum().backward()
 
 forward_min = math.inf

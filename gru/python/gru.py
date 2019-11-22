@@ -34,19 +34,16 @@ class GRUCell(torch.nn.Module):
         
         gate_x = F.linear(x, self.x2h_weights, self.x2h_bias)
         gate_h = F.linear(state, self.h2h_weights, self.h2h_bias)
-        
         gate_x = gate_x.squeeze()
         gate_h = gate_h.squeeze()
         
         i_r, i_i, i_n = gate_x.chunk(3, 1)
         h_r, h_i, h_n = gate_h.chunk(3, 1)
         
-        
         resetgate = F.sigmoid(i_r + h_r)
         inputgate = F.sigmoid(i_i + h_i)
         newgate = F.tanh(i_n + (resetgate * h_n))
         
         hy = newgate + inputgate * (state - newgate)
-        
         
         return hy

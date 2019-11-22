@@ -93,6 +93,8 @@ class GRUCell(torch.nn.Module):
         self.h2h_bias = nn.Parameter(torch.Tensor(1, 3 * state_size))
         self.reset_parameters()
 
+        pdb.set_trace()
+
     def reset_parameters(self):
         std = 1.0 / math.sqrt(self.state_size)
         for w in self.parameters():
