@@ -73,6 +73,8 @@ class GRUFunction(Function):
         # grad_x = grad_input_gates.mm(x2h_w)
         grad_hx += grad_hidden_gates.mm(h2h_w)
 
+        pdb.set_trace()
+
         return grad_x, grad_input_weights, grad_hidden_weights, grad_input_bias, grad_hidden_bias, grad_hx
 
 
