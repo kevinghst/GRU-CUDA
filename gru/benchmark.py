@@ -14,9 +14,9 @@ TIME_SCALES = {'s': 1, 'ms': 1000, 'us': 1000000}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('example', choices=['py', 'cpp', 'cuda', 'torch_lib'])
-parser.add_argument('-b', '--batch-size', type=int, default=128)
-parser.add_argument('-f', '--features', type=int, default=32)
-parser.add_argument('-s', '--state-size', type=int, default=128)
+parser.add_argument('-b', '--batch-size', type=int, default=32)
+parser.add_argument('-f', '--features', type=int, default=650)
+parser.add_argument('-s', '--state-size', type=int, default=1300)
 parser.add_argument('-r', '--runs', type=int, default=100)
 parser.add_argument('--scale', choices=['s', 'ms', 'us'], default='us')
 parser.add_argument('-c', '--cuda', action='store_true')
@@ -55,7 +55,6 @@ else:
 # Force CUDA initialization
 new_h = rnn(X, h)
 new_h.sum().backward()
-pdb.set_trace()
 
 forward_min = math.inf
 forward_time = 0
