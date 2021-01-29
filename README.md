@@ -2,6 +2,8 @@
 
 This repo contains python, Cpp, and CUDA implementations for GRU:
 
+The CUDA implementations were guided by the following [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html).
+
 There are a few "sights" you can metaphorically visit in this repository:
 
 - Navigate to the folder named after the model of interest
