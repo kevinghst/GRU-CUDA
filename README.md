@@ -1,10 +1,6 @@
 # C++/CUDA Extensions in PyTorch
 
-This repo contains CUDA implementations for various RNN architectures including:
-- GRU
-- GRU-tanh (all sigmoid replaced by tanh)
-
-The CUDA implementations were guided by the following [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html).
+This repo contains python, Cpp, and CUDA implementations for GRU:
 
 There are a few "sights" you can metaphorically visit in this repository:
 

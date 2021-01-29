@@ -1,3 +1,4 @@
 /gru/data
 /gru_tanh/data
 *pycache*
+.*
